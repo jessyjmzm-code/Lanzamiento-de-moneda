@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de moneda de ₡1</title>
+<style>
+  :root{
+    --verde:#146b4a; --verde2:#1f8a63; --crema:#f7f1df; --texto:#24332d;
+    --borde:#d8ccb0; --oro:#c79a35; --blanco:#fffdf7;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Arial,Helvetica,sans-serif; color:var(--texto);
+    background:linear-gradient(135deg,#eef5ef,#f8f3e5); min-height:100vh;
+  }
+  .contenedor{max-width:1050px;margin:auto;padding:24px}
+  header{
+    background:var(--verde); color:white; border-radius:18px; padding:22px 26px;
+    box-shadow:0 8px 24px #0002; margin-bottom:20px;
+  }
+  h1{margin:0 0 6px;font-size:clamp(25px,4vw,38px)}
+  header p{margin:0;opacity:.92}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px}
+  .panel{
+    background:rgba(255,253,247,.95);border:1px solid var(--borde);border-radius:18px;
+    padding:20px;box-shadow:0 6px 18px #00000012
+  }
+  .moneda-area{text-align:center}
+  .moneda{
+    width:190px;height:190px;border-radius:50%;margin:8px auto 18px;
+    border:10px solid #b88a2c; background:radial-gradient(circle at 35% 30%,#fff2ad,#d8ae4b 48%,#9d7220);
+    box-shadow:inset 0 0 0 3px #f1d47b,inset 0 0 20px #6f4e12,0 10px 20px #0003;
+    display:flex;align-items:center;justify-content:center;color:#62450e;font-weight:bold;
+    position:relative; overflow:hidden;
+  }
+  .moneda .cara{font-size:66px;line-height:1}
+  .moneda .texto{position:absolute;bottom:30px;font-size:13px;letter-spacing:2px}
+  .moneda.lanzando{animation:voltear .8s ease-in-out}
+  @keyframes voltear{
+    0%{transform:rotateY(0) translateY(0)}
+    50%{transform:rotateY(900deg) translateY(-65px)}
+    100%{transform:rotateY(1800deg) translateY(0)}
+  }
+  button{
+    border:0;border-radius:11px;padding:12px 16px;font-size:16px;font-weight:bold;
+    cursor:pointer;transition:.15s; margin:4px;
+  }
+  button:hover{transform:translateY(-1px)}
+  .principal{background:var(--verde);color:white;width:100%}
+  .secundario{background:#e9dfc3;color:#443715}
+  .estadisticas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}
+  .dato{background:var(--crema);border-radius:12px;padding:12px;text-align:center}
+  .dato small{display:block;font-size:12px}.dato strong{font-size:25px}
+  .tabla-wrap{max-height:480px;overflow:auto;border:1px solid var(--borde);border-radius:12px}
+  table{width:100%;border-collapse:collapse;background:white}
+  th,td{padding:9px;text-align:center;border-bottom:1px solid #eee}
+  th{position:sticky;top:0;background:var(--verde);color:white;z-index:1}
+  tr:nth-child(even){background:#faf8f0}
+  .mensaje{text-align:center;min-height:24px;margin-top:8px;font-size:14px}
+  .nota{font-size:13px;color:#5b665f;line-height:1.45;margin-top:14px}
+  .oculto{display:none}
+  .modal{
+    position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;
+    padding:18px;z-index:10
+  }
+  .modal.activo{display:flex}
+  .modal-box{background:#fffdf7;border-radius:18px;max-width:850px;width:100%;max-height:90vh;padding:20px;display:flex;flex-direction:column}
+  .modal-head{display:flex;justify-content:space-between;align-items:center}
+  .cerrar{background:#eee;color:#333}
+  @media(max-width:780px){.grid{grid-template-columns:1fr}.estadisticas{grid-template-columns:1fr 1fr}.moneda{width:160px;height:160px}}
+</style>
+</head>
+<body>
+<div class="contenedor">
+<header>
+  <h1>Simulador de lanzamiento de una moneda de ₡1</h1>
+  <p>Explora el azar mediante 24 lanzamientos y amplía la experiencia hasta 100.</p>
+</header>
+
+<div class="grid">
+  <section class="panel moneda-area">
+    <div id="moneda" class="moneda" aria-label="Moneda de un colón">
+      <div id="caraMoneda" class="cara">₡1</div>
+      <div class="texto">COSTA RICA</div>
+    </div>
+    <button id="lanzarBtn" class="principal">Lanzar moneda</button>
+    <button id="reiniciarBtn" class="secundario">Reiniciar</button>
+    <button id="ver100Btn" class="secundario">Ver tabla de 100 lanzamientos</button>
+    <div id="mensaje" class="mensaje">Realiza el primer lanzamiento.</div>
+    <p class="nota">
+      La simulación utiliza una selección aleatoria para representar dos resultados equiprobables:
+      cara y escudo. La moneda se muestra de forma ilustrativa y no pretende reproducir todos los
+      detalles físicos de una moneda real.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Registro de los primeros 24 lanzamientos</h2>
+    <div class="estadisticas">
+      <div class="dato"><small>Lanzamientos</small><strong id="n24">0</strong></div>
+      <div class="dato"><small>Caras</small><strong id="caras24">0</strong></div>
+      <div class="dato"><small>Escudos</small><strong id="escudos24">0</strong></div>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Lanzamiento</th><th>Resultado</th></tr></thead>
+        <tbody id="tabla24"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Simulación de 100 lanzamientos</h2>
+      <button id="cerrarBtn" class="cerrar">Cerrar</button>
+    </div>
+    <div class="estadisticas">
+      <div class="dato"><small>Lanzamientos</small><strong id="n100">100</strong></div>
+      <div class="dato"><small>Caras</small><strong id="caras100">0</strong></div>
+      <div class="dato"><small>Escudos</small><strong id="escudos100">0</strong></div>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Lanzamiento</th><th>Resultado</th></tr></thead>
+        <tbody id="tabla100"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let resultados24 = [];
+const moneda = document.getElementById('moneda');
+const caraMoneda = document.getElementById('caraMoneda');
+const tabla24 = document.getElementById('tabla24');
+const mensaje = document.getElementById('mensaje');
+
+function resultadoAleatorio(){
+  return Math.random() < 0.5 ? 'Cara' : 'Escudo';
+}
+
+function actualizar24(){
+  tabla24.innerHTML = '';
+  resultados24.forEach((r,i)=>{
+    const fila = document.createElement('tr');
+    fila.innerHTML = `<td>${i+1}</td><td>${r}</td>`;
+    tabla24.appendChild(fila);
+  });
+  document.getElementById('n24').textContent = resultados24.length;
+  document.getElementById('caras24').textContent = resultados24.filter(x=>x==='Cara').length;
+  document.getElementById('escudos24').textContent = resultados24.filter(x=>x==='Escudo').length;
+}
+
+function lanzar(){
+  if(resultados24.length >= 24){
+    mensaje.textContent = 'Ya se completaron los 24 lanzamientos. Puedes reiniciar o consultar los 100.';
+    return;
+  }
+  const resultado = resultadoAleatorio();
+  resultados24.push(resultado);
+  moneda.classList.remove('lanzando');
+  void moneda.offsetWidth;
+  moneda.classList.add('lanzando');
+
+  setTimeout(()=>{
+    caraMoneda.textContent = resultado === 'Cara' ? '₡1' : '★';
+    mensaje.textContent = `Resultado del lanzamiento ${resultados24.length}: ${resultado}.`;
+    actualizar24();
+  }, 650);
+}
+
+function generar100(){
+  const datos = Array.from({length:100}, ()=>resultadoAleatorio());
+  const tbody = document.getElementById('tabla100');
+  tbody.innerHTML = '';
+  datos.forEach((r,i)=>{
+    const fila=document.createElement('tr');
+    fila.innerHTML=`<td>${i+1}</td><td>${r}</td>`;
+    tbody.appendChild(fila);
+  });
+  document.getElementById('caras100').textContent = datos.filter(x=>x==='Cara').length;
+  document.getElementById('escudos100').textContent = datos.filter(x=>x==='Escudo').length;
+  document.getElementById('modal').classList.add('activo');
+}
+
+document.getElementById('lanzarBtn').addEventListener('click', lanzar);
+document.getElementById('reiniciarBtn').addEventListener('click', ()=>{
+  resultados24=[];
+  caraMoneda.textContent='₡1';
+  mensaje.textContent='Realiza el primer lanzamiento.';
+  actualizar24();
+});
+document.getElementById('ver100Btn').addEventListener('click', generar100);
+document.getElementById('cerrarBtn').addEventListener('click', ()=>document.getElementById('modal').classList.remove('activo'));
+document.getElementById('modal').addEventListener('click', e=>{
+  if(e.target.id==='modal') e.currentTarget.classList.remove('activo');
+});
+actualizar24();
+</script>
+</body>
+</html>
